@@ -1,0 +1,65 @@
+.hm.maven.jdk11.build.cache:
+    image: maven:3.8.6-jdk-11
+    variables:
+        BUILD_DIR: "."
+    before_script:
+        - mkdir .m2
+    script:
+        - |
+          cd $BUILD_DIR
+          mvn clean package
+    after_script:
+        - ls -l
+    cache:
+        key: $CI_COMMIT_REF_SLUG
+        paths:
+            - .m2
+            - target
+        policy: pull-push
+
+.hm.maven.jdk8.build.cache:
+    image: maven:3.8.6-jdk-8
+    before_script:
+        - mkdir .m2
+    script:
+        - |
+          cd $BUILD_DIR
+          mvn clean package
+    after_script:
+        - ls -l
+    cache:
+        key: $CI_COMMIT_REF_SLUG
+        paths:
+            - .m2
+            - target    
+        policy: pull-push
+
+.hm.maven.jdk11.artifact:
+    image: maven:3.8.6-jdk-11
+    variables:
+        BUILD_DIR: "."
+    before_script:
+        - mkdir .m2
+    script:
+        - |
+          cd $BUILD_DIR
+          mvn clean package
+    after_script:
+        - ls -l
+    artifacts:
+        paths:
+            - target/*.war
+            - target/*.jar
+
+.hm.maven.jdk8.artifact:
+    image: maven:3.8.6-jdk-8
+    before_script:
+        - mkdir .m2
+    script:
+        - |
+          cd $BUILD_DIR
+          mvn clean package
+    artifacts:
+        paths:
+            - target/*.war
+            - target/*.jar

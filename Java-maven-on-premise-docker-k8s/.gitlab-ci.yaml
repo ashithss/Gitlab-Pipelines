@@ -1,0 +1,76 @@
+include:
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: docker.yml
+
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: maven.yml
+
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: notification.yml
+
+stages:
+    - build
+    - publish
+    - deploy-dev
+    - notify
+    
+
+# Build source:
+#     stage: build
+#     tags: 
+#       - build
+#     variables:
+#         BUILD_DIR: "$CI_PROJECT_DIR"
+#     extends: .hm.maven.jdk11.artifact
+#     rules:
+#         - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+
+
+Docker Build and Push to Artifactory:
+    stage: publish
+    extends: .hm.docker.tag.publish
+    variables:
+        DOCKER_TAG: dev
+    rules:
+        - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+    cache:
+        key: $CI_COMMIT_REF_SLUG
+        paths:
+            - .m2
+            - target
+        policy: pull
+
+Update deployment:
+    image: alpine:latest
+    stage: deploy-dev
+    variables:
+        DEPLOY_DIR: 'manifests'
+        DEPLOY_FILE: 'deployment.yaml'
+#    before_script:
+#        - |
+#            apk add --no-cache git curl bash
+#            git remote set-url origin http://${CI_USER}:${CI_PUSH_TOKEN}@10.16.1.53/pes-testing/protest.git
+#            git config --global user.email "cicd_hm_user@happiestminds.com"
+#            git config --global user.name "Gitlab CI USER"
+    script:
+        - echo "ToDo this later."
+        #- |
+        #   git checkout $CI_COMMIT_BRANCH
+        #   sed -ie s/custom_image/$DOCKER_REGISTRY\\/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA/g $DEPLOY_DIR/$DEPLOY_FILE
+        #   cat $DEPLOY_DIR/$DEPLOY_FILE
+           # git commit -m "[skip ci]" $DEPLOY_DIR/$DEPLOY_FILE
+           # git push origin release/dev
+    
+    rules:
+        - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+
+notify dev:
+    stage: notify
+    image: alpine/curl
+    variables:
+        ENV: 'dev'
+    extends: .teams.deploy.notify
+    rules:
+        - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+             
+

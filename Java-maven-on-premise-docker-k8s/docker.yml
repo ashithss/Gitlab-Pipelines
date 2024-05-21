@@ -1,0 +1,49 @@
+image: 
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+
+.hm.docker.tag.publish:
+    variables:
+        DOCKER_TAG: 'latest'
+        BUILD_DIR: '$CI_PROJECT_DIR'
+        IMAGE_NAME: '$CI_PROJECT_NAME'
+        DOCKER_FILE_NAME: 'Dockerfile'
+    script:
+        - | 
+          mkdir -p /kaniko/.docker
+          echo $ARTIFACTORY_SECRET > /kaniko/.docker/config.json
+          echo "building image"
+          /kaniko/executor --context $BUILD_DIR --dockerfile $DOCKER_FILE_NAME --insecure-registry http://$DOCKER_REGISTRY --destination $DOCKER_REGISTRY/$IMAGE_NAME:$DOCKER_TAG --insecure 
+
+.hm.docker.publish:
+    variables:
+        BUILD_DIR: '$CI_PROJECT_DIR'
+        IMAGE_NAME: '$CI_PROJECT_NAME'
+        DOCKER_FILE_NAME: 'Dockerfile'
+    script:
+        - | 
+          mkdir -p /kaniko/.docker
+          echo $ARTIFACTORY_SECRET > /kaniko/.docker/config.json
+          /kaniko/executor --context $BUILD_DIR --dockerfile $DOCKER_FILE_NAME --insecure-registry http://$DOCKER_REGISTRY --destination $DOCKER_REGISTRY/$IMAGE_NAME:latest --insecure 
+
+# set runner with docker in docker tls enabled, see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind and https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-the-kubernetes-executor-with-docker-in-docker
+.hm.docker.tag.publish.private:
+    image: docker:20.10.16
+    variables:
+        DOCKER_TAG: "$CI_COMMIT_SHA"
+        DOCKER_FILE: "Dockerfile"
+        DOCKER_BUILD_DIR: "."
+        DOCKER_HOST: "tcp://docker:2376"
+        DOCKER_TLS_CERTDIR: "/certs"
+        DOCKER_TLS_VERIFY: 1
+        DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    services:
+        - name: docker:20.10.16-dind
+          command: ["--insecure-registry=http://10.16.1.132:8082"]
+    before_script:
+        - echo "$ARTIFACTORY_PASS" | docker login -u $ARTIFACTORY_USER $DOCKER_REGISTRY --password-stdin
+    script:
+        - |
+          docker build $DOCKER_BUILD_DIR --file $DOCKER_FILE -t $DOCKER_REGISTRY/$CI_PROJECT_NAME:$DOCKER_TAG
+          docker push $DOCKER_REGISTRY/$CI_PROJECT_NAME:$DOCKER_TAG
+

@@ -1,0 +1,14 @@
+stages:
+    - build
+
+Build project:
+    stage: build
+    image: node
+    tags: 
+        - build
+    script:
+        - npm install
+    cache:
+        key: $CI_COMMIT_REF_SLUG
+        paths:
+            - node_modules

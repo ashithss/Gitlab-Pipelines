@@ -1,0 +1,48 @@
+---
+include:
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: docker.yml
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: maven.yml
+    - project: hm/devops/ci-cd/gitlab-ci
+      file: notification.yml
+
+stages:
+    - build
+    - publish
+    - notify
+
+# source build:
+#     stage: build
+#     variables:
+#         BUILD_DIR: "$CI_PROJECT_DIR"
+#     tags:
+#       - build
+#     extends: .hm.maven.jdk11.build.cache
+#     rules:
+#         - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+
+docker build and publish:
+    stage: publish
+    variables:
+        DOCKER_TAG: dev
+    extends: .hm.docker.tag.publish
+    cache:
+        key: $CI_COMMIT_REF_SLUG
+        paths:
+            - .m2
+            - target
+        policy: pull
+    rules:
+        - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+
+notify dev:
+    stage: notify
+    image: alpine/curl
+    variables: 
+        ENV: 'dev'
+    extends: .teams.deploy.notify
+    rules:
+        - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'release/dev'
+
+

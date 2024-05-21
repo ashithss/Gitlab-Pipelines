@@ -1,0 +1,19 @@
+image: $BASE_IMAGE
+
+.hm.deploy:
+    variables:
+        CLUSTER: "default"
+        NAMESPACE: "default"
+        DEPLOY_FILE: ""
+    script:
+        - | 
+        if [-z $DEPLOY_FILE]
+        then
+            echo "deploy file can't be empty"
+        else
+            mkdir -p $HOME/.kube
+            cat "$KUBE_CONFIG" | base64 -d > config
+            kubectl config set-cluster $CLUSTER
+            kubectl apply -f $DEPLOY_FILE -n $NAMESPACE
+        fi
+        

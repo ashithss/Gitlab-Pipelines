@@ -1,0 +1,4 @@
+.teams.deploy.notify:
+    script:
+        | 
+        curl -X POST $CHANNEL_URL -d "{\"text\":\"Project $CI_PROJECT_NAME was deployed to $ENV environment\"}"
