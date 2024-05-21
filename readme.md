@@ -15,7 +15,3 @@ This repository contains the configuration for our GitLab CI/CD pipelines.
 ## Usage
 
 To run a pipeline, push your changes to the repository. GitLab will automatically detect the pipeline configuration files and run the pipeline.
-
-## More Information
-
-For more information on GitLab CI/CD, see the [official documentation](https://docs.gitlab.com/ee/ci/).
